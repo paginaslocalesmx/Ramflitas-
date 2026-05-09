@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>El Ramflitas - Del Campo a su Mesa</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap');
+
+        :root {
+            --ram-pink: #DB5E62;
+            --ram-green: #2D5A27;
+            --ram-purple: #4B2C5E;
+            --ram-black: #1E1A1B;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #f9fafb;
+            color: var(--ram-black);
+            overflow-x: hidden;
+        }
+
+        /* Cursor Parallax Effect */
+        #cursor-trail {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 20px;
+            height: 20px;
+            background: var(--ram-pink);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 9999;
+            opacity: 0.6;
+            transition: transform 0.1s ease-out;
+            filter: blur(4px);
+        }
+
+        /* Animations */
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+
+        .float-animation {
+            animation: float 3s ease-in-out infinite;
+        }
+
+        .combi-btn {
+            background: var(--ram-pink);
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .combi-btn:hover {
+            transform: scale(1.1) rotate(-5deg);
+            box-shadow: 0 10px 25px rgba(219, 94, 98, 0.4);
+        }
+
+        /* 3D Combi Container */
+        #combi-3d-container {
+            position: fixed;
+            bottom: 20px;
+            right: 100px;
+            width: 150px;
+            height: 100px;
+            pointer-events: none;
+            z-index: 40;
+            opacity: 0;
+            transition: opacity 0.5s;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: var(--ram-pink);
+            border-radius: 10px;
+        }
+
+        .gradient-text {
+            background: linear-gradient(45deg, var(--ram-pink), var(--ram-purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* Modal & Chat Styles */
+        .modal-enter {
+            animation: modalIn 0.4s ease-out forwards;
+        }
+
+        @keyframes modalIn {
+            from { opacity: 0; transform: scale(0.9) translateY(20px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        .chat-window {
+            box-shadow: 0 10px 50px rgba(0,0,0,0.1);
+            border-radius: 20px 20px 0 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Cursor Trail -->
+    <div id="cursor-trail"></div>
+
+    <!-- Header -->
+    <header class="fixed w-full top-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-100">
+        <div class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <img src="logo.png" alt="El Ramflitas Logo" class="h-12 w-auto" onerror="this.src='https://via.placeholder.com/150x150?text=Ramflitas'">
+                <span class="text-2xl font-bold tracking-tighter text-ram-black">EL <span class="text-ram-pink">RAMFLITAS</span></span>
+            </div>
+            <nav class="hidden md:flex space-x-8 font-medium">
+                <a href="#" class="hover:text-ram-pink transition">Inicio</a>
+                <a href="#productos" class="hover:text-ram-pink transition">Productos</a>
+                <a href="#nosotros" class="hover:text-ram-pink transition">Nosotros</a>
+            </nav>
+            <button onclick="openOrderModal()" class="bg-ram-pink text-white px-6 py-2 rounded-full font-semibold hover:bg-opacity-90 transition shadow-lg shadow-pink-200">
+                Pedir Ahora
+            </button>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="pt-32 pb-20 px-6">
+        <div class="container mx-auto text-center">
+            <h1 class="text-5xl md:text-7xl font-bold mb-6 leading-tight">
+                La frescura de la <br>
+                <span class="gradient-text">Central de Abastos</span> <br>
+                en tu puerta.
+            </h1>
+            <p class="text-xl text-gray-600 mb-10 max-w-2xl mx-auto">
+                Seleccionamos lo mejor del campo poblano para llevarlo directamente a tu mesa. Calidad, rapidez y el mejor precio de Puebla.
+            </p>
+            <div class="flex flex-col md:flex-row justify-center gap-4">
+                <button onclick="openOrderModal()" class="bg-ram-pink text-white px-10 py-4 rounded-2xl text-lg font-bold hover:scale-105 transition shadow-xl">
+                    <i class="fas fa-shopping-basket mr-2"></i> Hacer Pedido
+                </button>
+                <button onclick="toggleChat()" class="bg-white border-2 border-ram-pink text-ram-pink px-10 py-4 rounded-2xl text-lg font-bold hover:bg-ram-pink hover:text-white transition">
+                    <i class="fas fa-comment-dots mr-2"></i> Consultar Productos
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features -->
+    <section id="productos" class="py-20 bg-white">
+        <div class="container mx-auto px-6">
+            <div class="grid md:grid-cols-3 gap-12">
+                <div class="p-8 rounded-3xl bg-pink-50 border border-pink-100 hover:shadow-xl transition">
+                    <div class="w-16 h-16 bg-ram-pink rounded-2xl flex items-center justify-center text-white text-2xl mb-6">
+                        <i class="fas fa-apple-whole"></i>
+                    </div>
+                    <h3 class="text-2xl font-bold mb-4">Frutas y Verduras</h3>
+                    <p class="text-gray-600">Selección diaria de temporada directamente de los productores de la Central.</p>
+                </div>
+                <div class="p-8 rounded-3xl bg-green-50 border border-green-100 hover:shadow-xl transition">
+                    <div class="w-16 h-16 bg-ram-green rounded-2xl flex items-center justify-center text-white text-2xl mb-6">
+                        <i class="fas fa-drumstick-bite"></i>
+                    </div>
+                    <h3 class="text-2xl font-bold mb-4">Carnes y Más</h3>
+                    <p class="text-gray-600">Cortes frescos y productos de primera calidad con manejo higiénico garantizado.</p>
+                </div>
+                <div class="p-8 rounded-3xl bg-purple-50 border border-purple-100 hover:shadow-xl transition">
+                    <div class="w-16 h-16 bg-ram-purple rounded-2xl flex items-center justify-center text-white text-2xl mb-6">
+                        <i class="fas fa-box-open"></i>
+                    </div>
+                    <h3 class="text-2xl font-bold mb-4">Abarrotes</h3>
+                    <p class="text-gray-600">Todo lo que tu despensa necesita a precios de mayoreo desde una pieza.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-ram-black text-white py-12">
+        <div class="container mx-auto px-6">
+            <div class="flex flex-col md:flex-row justify-between items-center">
+                <div class="mb-8 md:mb-0">
+                    <div class="flex items-center space-x-3 mb-4">
+                        <img src="logo.png" alt="Logo" class="h-10 filter brightness-0 invert" onerror="this.src='https://via.placeholder.com/100x100?text=Logo'">
+                        <span class="text-xl font-bold">EL RAMFLITAS</span>
+                    </div>
+                    <p class="text-gray-400">Central de Abastos de Puebla, México.</p>
+                </div>
+                <div class="flex space-x-6 text-2xl">
+                    <a href="#" class="hover:text-ram-pink transition"><i class="fab fa-facebook"></i></a>
+                    <a href="#" class="hover:text-ram-pink transition"><i class="fab fa-instagram"></i></a>
+                    <a href="https://wa.me/2213454572" class="hover:text-ram-pink transition"><i class="fab fa-whatsapp"></i></a>
+                </div>
+            </div>
+            <hr class="my-8 border-gray-800">
+            <p class="text-center text-gray-500 text-sm">© 2024 El Ramflitas. Todos los derechos reservados. Diseñado para GitHub Pages.</p>
+        </div>
+    </footer>
+
+    <!-- Floating Buttons -->
+    <div class="fixed bottom-8 right-8 flex flex-col space-y-4 z-50">
+        <!-- Combi Button (Sales) -->
+        <button onclick="openOrderModal()" class="combi-btn w-20 h-20 rounded-full flex items-center justify-center text-white shadow-2xl relative group overflow-hidden">
+            <div class="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition"></div>
+            <svg viewBox="0 0 100 100" class="w-14 h-14 fill-current">
+                <!-- Simple Combi Icon -->
+                <path d="M15,40 L85,40 L85,70 L15,70 Z M20,45 L48,45 L48,55 L20,55 Z M52,45 L80,45 L80,55 L52,55 Z M25,70 L25,75 L35,75 L35,70 Z M65,70 L65,75 L75,75 L75,70 Z M15,55 L15,65 L10,65 L10,55 Z M85,55 L85,65 L90,65 L90,55 Z" />
+                <circle cx="30" cy="75" r="8" fill="#333" />
+                <circle cx="70" cy="75" r="8" fill="#333" />
+            </svg>
+            <span class="absolute -top-2 -right-2 bg-green-500 text-[10px] px-2 py-1 rounded-full font-bold animate-pulse">VENTAS</span>
+        </button>
+
+        <!-- Chatbot Button -->
+        <button onclick="toggleChat()" class="w-16 h-16 bg-ram-purple rounded-full flex items-center justify-center text-white shadow-xl hover:scale-110 transition">
+            <i class="fas fa-robot text-2xl"></i>
+        </button>
+    </div>
+
+    <!-- 3D Combi Container -->
+    <div id="combi-3d-container"></div>
+
+    <!-- Order Modal -->
+    <div id="orderModal" class="fixed inset-0 z-[60] hidden flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+        <div class="bg-white w-full max-w-2xl rounded-[32px] overflow-hidden shadow-2xl modal-enter">
+            <div class="bg-ram-pink p-6 text-white flex justify-between items-center">
+                <h2 class="text-2xl font-bold flex items-center">
+                    <i class="fas fa-truck-fast mr-3"></i> Formulario de Pedido
+                </h2>
+                <button onclick="closeOrderModal()" class="text-white/80 hover:text-white text-2xl">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form id="orderForm" class="p-8 space-y-6 max-h-[70vh] overflow-y-auto">
+                <div class="grid md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-sm font-bold mb-2">Nombre Completo</label>
+                        <input type="text" id="name" required class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-ram-pink focus:ring-2 focus:ring-pink-100 outline-none transition" placeholder="Ej. Juan Pérez">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold mb-2">Teléfono</label>
+                        <input type="tel" id="phone" required class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-ram-pink focus:ring-2 focus:ring-pink-100 outline-none transition" placeholder="222 000 0000">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-bold mb-2">Dirección en Puebla</label>
+                    <textarea id="address" required class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-ram-pink focus:ring-2 focus:ring-pink-100 outline-none transition" rows="2" placeholder="Calle, Número, Colonia y CP"></textarea>
+                </div>
+                <div>
+                    <label class="block text-sm font-bold mb-2">Productos de la Central</label>
+                    <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+                        <label class="flex items-center p-3 border rounded-xl cursor-pointer hover:bg-pink-50 transition">
+                            <input type="checkbox" name="products" value="Jitomate" class="mr-2 accent-ram-pink"> Jitomate
+                        </label>
+                        <label class="flex items-center p-3 border rounded-xl cursor-pointer hover:bg-pink-50 transition">
+                            <input type="checkbox" name="products" value="Chile Poblano" class="mr-2 accent-ram-pink"> Chile Poblano
+                        </label>
+                        <label class="flex items-center p-3 border rounded-xl cursor-pointer hover:bg-pink-50 transition">
+                            <input type="checkbox" name="products" value="Fruta de Temporada" class="mr-2 accent-ram-pink"> Fruta Temp.
+                        </label>
+                        <label class="flex items-center p-3 border rounded-xl cursor-pointer hover:bg-pink-50 transition">
+                            <input type="checkbox" name="products" value="Cebolla" class="mr-2 accent-ram-pink"> Cebolla
+                        </label>
+                        <label class="flex items-center p-3 border rounded-xl cursor-pointer hover:bg-pink-50 transition">
+                            <input type="checkbox" name="products" value="Papa" class="mr-2 accent-ram-pink"> Papa
+                        </label>
+                        <label class="flex items-center p-3 border rounded-xl cursor-pointer hover:bg-pink-50 transition">
+                            <input type="checkbox" name="products" value="Carnes" class="mr-2 accent-ram-pink"> Carnes
+                        </label>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-bold mb-2">Fecha de Entrega</label>
+                    <input type="date" id="deliveryDate" required class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-ram-pink focus:ring-2 focus:ring-pink-100 outline-none transition">
+                </div>
+                
+                <div id="oxxoPay" class="hidden p-4 bg-yellow-50 border border-yellow-200 rounded-2xl text-center">
+                    <p class="text-sm font-bold text-yellow-800 mb-2">Referencia de Pago Generada</p>
+                    <div class="bg-white p-3 rounded-lg font-mono text-lg tracking-widest border border-dashed border-yellow-400">
+                        OXXO-PAY-RAM-7721
+                    </div>
+                    <p class="text-[10px] mt-2 text-yellow-600">Simulación de pago para demostración</p>
+                </div>
+
+                <button type="submit" class="w-full bg-ram-pink text-white py-4 rounded-2xl text-lg font-bold hover:bg-opacity-90 transition shadow-xl shadow-pink-100">
+                    Confirmar Pedido <i class="fab fa-whatsapp ml-2"></i>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Chatbot Window -->
+    <div id="chatWindow" class="fixed bottom-28 right-8 w-80 md:w-96 bg-white z-50 hidden chat-window overflow-hidden">
+        <div class="bg-ram-purple p-4 text-white flex justify-between items-center">
+            <div class="flex items-center">
+                <div class="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center mr-3">
+                    <i class="fas fa-robot"></i>
+                </div>
+                <div>
+                    <p class="font-bold text-sm">Asesor Ramflitas</p>
+                    <p class="text-[10px] text-purple-200">En línea ahora</p>
+                </div>
+            </div>
+            <button onclick="toggleChat()" class="text-white/80 hover:text-white"><i class="fas fa-times"></i></button>
+        </div>
+        <div id="chatMessages" class="h-80 overflow-y-auto p-4 space-y-4 bg-gray-50">
+            <div class="bg-white p-3 rounded-2xl rounded-tl-none shadow-sm text-sm border border-gray-100">
+                ¡Hola! Soy tu asesor de la Central de Abastos. ¿En qué puedo ayudarte hoy? 🍎🥦🥩
+            </div>
+        </div>
+        <div class="p-4 border-t bg-white">
+            <div class="grid grid-cols-2 gap-2 mb-3">
+                <button onclick="botReply('frutas')" class="text-[10px] bg-pink-50 text-ram-pink p-2 rounded-lg border border-pink-100 hover:bg-pink-100 transition">Ver Frutas</button>
+                <button onclick="botReply('carnes')" class="text-[10px] bg-green-50 text-ram-green p-2 rounded-lg border border-green-100 hover:bg-green-100 transition">Ver Carnes</button>
+            </div>
+            <button onclick="window.open('https://wa.me/2213454572', '_blank')" class="w-full bg-ram-pink text-white py-2 rounded-xl text-xs font-bold hover:bg-opacity-90 transition">
+                Hablar con un humano <i class="fab fa-whatsapp ml-1"></i>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // 1. Cursor Parallax
+        const cursor = document.getElementById('cursor-trail');
+        document.addEventListener('mousemove', (e) => {
+            cursor.style.transform = `translate(${e.clientX - 10}px, ${e.clientY - 10}px)`;
+        });
+
+        // 2. Three.js 3D Combi Animation
+        let scene, camera, renderer, combi;
+        function init3D() {
+            const container = document.getElementById('combi-3d-container');
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(75, 150 / 100, 0.1, 1000);
+            renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+            renderer.setSize(150, 100);
+            container.appendChild(renderer.domElement);
+
+            // Simple Boxy Combi
+            const bodyGroup = new THREE.Group();
+            
+            const bodyGeom = new THREE.BoxGeometry(2, 1, 1);
+            const bodyMat = new THREE.MeshPhongMaterial({ color: 0xDB5E62 });
+            const body = new THREE.Mesh(bodyGeom, bodyMat);
+            bodyGroup.add(body);
+
+            const topGeom = new THREE.BoxGeometry(1.8, 0.5, 0.9);
+            const topMat = new THREE.MeshPhongMaterial({ color: 0xffffff });
+            const top = new THREE.Mesh(topGeom, topMat);
+            top.position.y = 0.7;
+            bodyGroup.add(top);
+
+            const light = new THREE.DirectionalLight(0xffffff, 1);
+            light.position.set(5, 5, 5);
+            scene.add(light);
+            scene.add(new THREE.AmbientLight(0x404040));
+
+            combi = bodyGroup;
+            scene.add(combi);
+            camera.position.z = 4;
+            camera.position.y = 1;
+            camera.lookAt(0,0,0);
+
+            function animate() {
+                requestAnimationFrame(animate);
+                combi.rotation.y += 0.01;
+                renderer.render(scene, camera);
+            }
+            animate();
+        }
+        init3D();
+
+        // Scroll logic for 3D Combi
+        window.addEventListener('scroll', () => {
+            const container = document.getElementById('combi-3d-container');
+            const scrollPercent = window.scrollY / (document.documentElement.scrollHeight - window.innerHeight);
+            if (window.scrollY > 100) {
+                container.style.opacity = '1';
+                combi.position.x = -2 + (scrollPercent * 4);
+            } else {
+                container.style.opacity = '0';
+            }
+        });
+
+        // 3. Moda            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: var(--ram-pink);
+            border-radius: 10px;
+        }
+
+        .gradient-text {
+            background: linear-gradient(45deg, var(--ram-pink), var(--ram-purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* Modal & Chat Styles */
+        .modal-enter {
+            animation: modalIn 0.4s ease-out forwards;
+        }
+
+        @keyframes modalIn {
+            from { opacity: 0; transform: scale(0.9) translateY(20px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        .chat-window {
+            box-shadow: 0 10px 50px rgba(0,0,0,0.1);
+            border-radius: 20px 20px 0 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Cursor Trail -->
+    <div id="cursor-trail"></div>
+
+    <!-- Header -->
+    <header class="fixed w-full top-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-100">
+        <div class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <img src="logo.png" alt="El Ramflitas Logo" class="h-12 w-auto" onerror="this.src='https://via.placeholder.com/150x150?text=Ramflitas'">
+                <span class="text-2xl font-bold tracking-tighter text-ram-black">EL <span class="text-ram-pink">RAMFLITAS</span></span>
+            </div>
+            <nav class="hidden md:flex space-x-8 font-medium">
+                <a href="#" class="hover:text-ram-pink transition">Inicio</a>
+                <a href="#productos" class="hover:text-ram-pink transition">Productos</a>
+                <a href="#nosotros" class="hover:text-ram-pink transition">Nosotros</a>
+            </nav>
+            <button onclick="openOrderModal()" class="bg-ram-pink text-white px-6 py-2 rounded-full font-semibold hover:bg-opacity-90 transition shadow-lg shadow-pink-200">
+                Pedir Ahora
+            </button>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="pt-32 pb-20 px-6">
+        <div class="container mx-auto text-center">
+            <h1 class="text-5xl md:text-7xl font-bold mb-6 leading-tight">
+                La frescura de la <br>
+                <span class="gradient-text">Central de Abastos</span> <br>
+                en tu puerta.
+            </h1>
+            <p class="text-xl text-gray-600 mb-10 max-w-2xl mx-auto">
+                Seleccionamos lo mejor del campo poblano para llevarlo directamente a tu mesa. Calidad, rapidez y el mejor precio de Puebla.
+            </p>
+            <div class="flex flex-col md:flex-row justify-center gap-4">
+                <button onclick="openOrderModal()" class="bg-ram-pink text-white px-10 py-4 rounded-2xl text-lg font-bold hover:scale-105 transition shadow-xl">
+                    <i class="fas fa-shopping-basket mr-2"></i> Hacer Pedido
+                </button>
+                <button onclick="toggleChat()" class="bg-white border-2 border-ram-pink text-ram-pink px-10 py-4 rounded-2xl text-lg font-bold hover:bg-ram-pink hover:text-white transition">
+                    <i class="fas fa-comment-dots mr-2"></i> Consultar Productos
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features -->
+    <section id="productos" class="py-20 bg-white">
+        <div class="container mx-auto px-6">
+            <div class="grid md:grid-cols-3 gap-12">
+                <div class="p-8 rounded-3xl bg-pink-50 border border-pink-100 hover:shadow-xl transition">
+                    <div class="w-16 h-16 bg-ram-pink rounded-2xl flex items-center justify-center text-white text-2xl mb-6">
+                        <i class="fas fa-apple-whole"></i>
+                    </div>
+                    <h3 class="text-2xl font-bold mb-4">Frutas y Verduras</h3>
+                    <p class="text-gray-600">Selección diaria de temporada directamente de los productores de la Central.</p>
+                </div>
+                <div class="p-8 rounded-3xl bg-green-50 border border-green-100 hover:shadow-xl transition">
+                    <div class="w-16 h-16 bg-ram-green rounded-2xl flex items-center justify-center text-white text-2xl mb-6">
+                        <i class="fas fa-drumstick-bite"></i>
+                    </div>
+                    <h3 class="text-2xl font-bold mb-4">Carnes y Más</h3>
+                    <p class="text-gray-600">Cortes frescos y productos de primera calidad con manejo higiénico garantizado.</p>
+                </div>
+                <div class="p-8 rounded-3xl bg-purple-50 border border-purple-100 hover:shadow-xl transition">
+                    <div class="w-16 h-16 bg-ram-purple rounded-2xl flex items-center justify-center text-white text-2xl mb-6">
+                        <i class="fas fa-box-open"></i>
+                    </div>
+                    <h3 class="text-2xl font-bold mb-4">Abarrotes</h3>
+                    <p class="text-gray-600">Todo lo que tu despensa necesita a precios de mayoreo desde una pieza.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-ram-black text-white py-12">
+        <div class="container mx-auto px-6">
+            <div class="flex flex-col md:flex-row justify-between items-center">
+                <div class="mb-8 md:mb-0">
+                    <div class="flex items-center space-x-3 mb-4">
+                        <img src="logo.png" alt="Logo" class="h-10 filter brightness-0 invert" onerror="this.src='https://via.placeholder.com/100x100?text=Logo'">
+                        <span class="text-xl font-bold">EL RAMFLITAS</span>
+                    </div>
+                    <p class="text-gray-400">Central de Abastos de Puebla, México.</p>
+                </div>
+                <div class="flex space-x-6 text-2xl">
+                    <a href="#" class="hover:text-ram-pink transition"><i class="fab fa-facebook"></i></a>
+                    <a href="#" class="hover:text-ram-pink transition"><i class="fab fa-instagram"></i></a>
+                    <a href="https://wa.me/2213454572" class="hover:text-ram-pink transition"><i class="fab fa-whatsapp"></i></a>
+                </div>
+            </div>
+            <hr class="my-8 border-gray-800">
+            <p class="text-center text-gray-500 text-sm">© 2024 El Ramflitas. Todos los derechos reservados. Diseñado para GitHub Pages.</p>
+        </div>
+    </footer>
+
+    <!-- Floating Buttons -->
+    <div class="fixed bottom-8 right-8 flex flex-col space-y-4 z-50">
+        <!-- Combi Button (Sales) -->
+        <button onclick="openOrderModal()" class="combi-btn w-20 h-20 rounded-full flex items-center justify-center text-white shadow-2xl relative group overflow-hidden">
+            <div class="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition"></div>
+            <svg viewBox="0 0 100 100" class="w-14 h-14 fill-current">
+                <!-- Simple Combi Icon -->
+                <path d="M15,40 L85,40 L85,70 L15,70 Z M20,45 L48,45 L48,55 L20,55 Z M52,45 L80,45 L80,55 L52,55 Z M25,70 L25,75 L35,75 L35,70 Z M65,70 L65,75 L75,75 L75,70 Z M15,55 L15,65 L10,65 L10,55 Z M85,55 L85,65 L90,65 L90,55 Z" />
+                <circle cx="30" cy="75" r="8" fill="#333" />
+                <circle cx="70" cy="75" r="8" fill="#333" />
+            </svg>
+            <span class="absolute -top-2 -right-2 bg-green-500 text-[10px] px-2 py-1 rounded-full font-bold animate-pulse">VENTAS</span>
+        </button>
+
+        <!-- Chatbot Button -->
+        <button onclick="toggleChat()" class="w-16 h-16 bg-ram-purple rounded-full flex items-center justify-center text-white shadow-xl hover:scale-110 transition">
+            <i class="fas fa-robot text-2xl"></i>
+        </button>
+    </div>
+
+    <!-- 3D Combi Container -->
+    <div id="combi-3d-container"></div>
+
+    <!-- Order Modal -->
+    <div id="orderModal" class="fixed inset-0 z-[60] hidden flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+        <div class="bg-white w-full max-w-2xl rounded-[32px] overflow-hidden shadow-2xl modal-enter">
+            <div class="bg-ram-pink p-6 text-white flex justify-between items-center">
+                <h2 class="text-2xl font-bold flex items-center">
+                    <i class="fas fa-truck-fast mr-3"></i> Formulario de Pedido
+                </h2>
+                <button onclick="closeOrderModal()" class="text-white/80 hover:text-white text-2xl">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form id="orderForm" class="p-8 space-y-6 max-h-[70vh] overflow-y-auto">
+                <div class="grid md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-sm font-bold mb-2">Nombre Completo</label>
+                        <input type="text" id="name" required class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-ram-pink focus:ring-2 focus:ring-pink-100 outline-none transition" placeholder="Ej. Juan Pérez">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold mb-2">Teléfono</label>
+                        <input type="tel" id="phone" required class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-ram-pink focus:ring-2 focus:ring-pink-100 outline-none transition" placeholder="222 000 0000">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-bold mb-2">Dirección en Puebla</label>
+                    <textarea id="address" required class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-ram-pink focus:ring-2 focus:ring-pink-100 outline-none transition" rows="2" placeholder="Calle, Número, Colonia y CP"></textarea>
+                </div>
+                <div>
+                    <label class="block text-sm font-bold mb-2">Productos de la Central</label>
+                    <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+                        <label class="flex items-center p-3 border rounded-xl cursor-pointer hover:bg-pink-50 transition">
+                            <input type="checkbox" name="products" value="Jitomate" class="mr-2 accent-ram-pink"> Jitomate
+                        </label>
+                        <label class="flex items-center p-3 border rounded-xl cursor-pointer hover:bg-pink-50 transition">
+                            <input type="checkbox" name="products" value="Chile Poblano" class="mr-2 accent-ram-pink"> Chile Poblano
+                        </label>
+                        <label class="flex items-center p-3 border rounded-xl cursor-pointer hover:bg-pink-50 transition">
+                            <input type="checkbox" name="products" value="Fruta de Temporada" class="mr-2 accent-ram-pink"> Fruta Temp.
+                        </label>
+                        <label class="flex items-center p-3 border rounded-xl cursor-pointer hover:bg-pink-50 transition">
+                            <input type="checkbox" name="products" value="Cebolla" class="mr-2 accent-ram-pink"> Cebolla
+                        </label>
+                        <label class="flex items-center p-3 border rounded-xl cursor-pointer hover:bg-pink-50 transition">
+                            <input type="checkbox" name="products" value="Papa" class="mr-2 accent-ram-pink"> Papa
+                        </label>
+                        <label class="flex items-center p-3 border rounded-xl cursor-pointer hover:bg-pink-50 transition">
+                            <input type="checkbox" name="products" value="Carnes" class="mr-2 accent-ram-pink"> Carnes
+                        </label>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-bold mb-2">Fecha de Entrega</label>
+                    <input type="date" id="deliveryDate" required class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-ram-pink focus:ring-2 focus:ring-pink-100 outline-none transition">
+                </div>
+                
+                <div id="oxxoPay" class="hidden p-4 bg-yellow-50 border border-yellow-200 rounded-2xl text-center">
+                    <p class="text-sm font-bold text-yellow-800 mb-2">Referencia de Pago Generada</p>
+                    <div class="bg-white p-3 rounded-lg font-mono text-lg tracking-widest border border-dashed border-yellow-400">
+                        OXXO-PAY-RAM-7721
+                    </div>
+                    <p class="text-[10px] mt-2 text-yellow-600">Simulación de pago para demostración</p>
+                </div>
+
+                <button type="submit" class="w-full bg-ram-pink text-white py-4 rounded-2xl text-lg font-bold hover:bg-opacity-90 transition shadow-xl shadow-pink-100">
+                    Confirmar Pedido <i class="fab fa-whatsapp ml-2"></i>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Chatbot Window -->
+    <div id="chatWindow" class="fixed bottom-28 right-8 w-80 md:w-96 bg-white z-50 hidden chat-window overflow-hidden">
+        <div class="bg-ram-purple p-4 text-white flex justify-between items-center">
+            <div class="flex items-center">
+                <div class="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center mr-3">
+                    <i class="fas fa-robot"></i>
+                </div>
+                <div>
+                    <p class="font-bold text-sm">Asesor Ramflitas</p>
+                    <p class="text-[10px] text-purple-200">En línea ahora</p>
+                </div>
+            </div>
+            <button onclick="toggleChat()" class="text-white/80 hover:text-white"><i class="fas fa-times"></i></button>
+        </div>
+        <div id="chatMessages" class="h-80 overflow-y-auto p-4 space-y-4 bg-gray-50">
+            <div class="bg-white p-3 rounded-2xl rounded-tl-none shadow-sm text-sm border border-gray-100">
+                ¡Hola! Soy tu asesor de la Central de Abastos. ¿En qué puedo ayudarte hoy? 🍎🥦🥩
+            </div>
+        </div>
+        <div class="p-4 border-t bg-white">
+            <div class="grid grid-cols-2 gap-2 mb-3">
+                <button onclick="botReply('frutas')" class="text-[10px] bg-pink-50 text-ram-pink p-2 rounded-lg border border-pink-100 hover:bg-pink-100 transition">Ver Frutas</button>
+                <button onclick="botReply('carnes')" class="text-[10px] bg-green-50 text-ram-green p-2 rounded-lg border border-green-100 hover:bg-green-100 transition">Ver Carnes</button>
+            </div>
+            <button onclick="window.open('https://wa.me/2213454572', '_blank')" class="w-full bg-ram-pink text-white py-2 rounded-xl text-xs font-bold hover:bg-opacity-90 transition">
+                Hablar con un humano <i class="fab fa-whatsapp ml-1"></i>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // 1. Cursor Parallax
+        const cursor = document.getElementById('cursor-trail');
+        document.addEventListener('mousemove', (e) => {
+            cursor.style.transform = `translate(${e.clientX - 10}px, ${e.clientY - 10}px)`;
+        });
+
+        // 2. Three.js 3D Combi Animation
+        let scene, camera, renderer, combi;
+        function init3D() {
+            const container = document.getElementById('combi-3d-container');
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(75, 150 / 100, 0.1, 1000);
+            renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+            renderer.setSize(150, 100);
+            container.appendChild(renderer.domElement);
+
+            // Simple Boxy Combi
+            const bodyGroup = new THREE.Group();
+            
+            const bodyGeom = new THREE.BoxGeometry(2, 1, 1);
+            const bodyMat = new THREE.MeshPhongMaterial({ color: 0xDB5E62 });
+            const body = new THREE.Mesh(bodyGeom, bodyMat);
+            bodyGroup.add(body);
+
+            const topGeom = new THREE.BoxGeometry(1.8, 0.5, 0.9);
+            const topMat = new THREE.MeshPhongMaterial({ color: 0xffffff });
+            const top = new THREE.Mesh(topGeom, topMat);
+            top.position.y = 0.7;
+            bodyGroup.add(top);
+
+            const light = new THREE.DirectionalLight(0xffffff, 1);
+            light.position.set(5, 5, 5);
+            scene.add(light);
+            scene.add(new THREE.AmbientLight(0x404040));
+
+            combi = bodyGroup;
+            scene.add(combi);
+            camera.position.z = 4;
+            camera.position.y = 1;
+            camera.lookAt(0,0,0);
+
+            function animate() {
+                requestAnimationFrame(animate);
+                combi.rotation.y += 0.01;
+                renderer.render(scene, camera);
+            }
+            animate();
+        }
+        init3D();
+
+        // Scroll logic for 3D Combi
+        window.addEventListener('scroll', () => {
+            const container = document.getElementById('combi-3d-container');
+            const scrollPercent = window.scrollY / (document.documentElement.scrollHeight - window.innerHeight);
+            if (window.scrollY > 100) {
+                container.style.opacity = '1';
+                combi.position.x = -2 + (scrollPercent * 4);
+            } else {
+                container.style.opacity = '0';
+            }
+        });
+  </script>
+</body>
+</html>
+        // 3. Moda
